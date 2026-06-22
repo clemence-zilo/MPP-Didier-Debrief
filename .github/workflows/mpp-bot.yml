@@ -1,0 +1,31 @@
+name: MonPetitProno Daily Bot
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-mpp-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch repository code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run MPP script
+        run: node index.js
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MPP_API_URL: ${{ secrets.MPP_API_URL }}
+          MPP_AUTH_TOKEN: ${{ secrets.MPP_AUTH_TOKEN }}
+          CHALLENGE_ID: ${{ secrets.CHALLENGE_ID }}
