@@ -33,25 +33,36 @@ async function getMppRankings() {
     const day = String(today.getDate()).padStart(2, "0");
     const month = String(today.getMonth() + 1).padStart(2, "0");
 
-    let message = `🏆 *MPP Leaderboard (${day}/${month})* 🏆\n\n`;
+    let message = `🏆 *MPP - Le débrief du matin (${day}/${month})* 🏆\n\n`;
+    message += "On fait les comptes. Voici l'état du classement ce matin :\n\n";
 
     standings.forEach((item) => {
       const user = item.user || {};
       const ranking = item.ranking || {};
 
-      const name = user.firstName || user.username || "Unknown Player";
+      const name = user.firstName || user.username || "Inconnu";
       const rank = ranking.rank || "-";
       const points = ranking.points || 0;
       const exacts = ranking.exactForecasts || 0;
       const goods = ranking.goodForecasts || 0;
 
-      let rankDisplay = `${rank}.`;
+      let rankDisplay = `*#${rank}*`;
       if (rank === 1) rankDisplay = "🥇";
       else if (rank === 2) rankDisplay = "🥈";
       else if (rank === 3) rankDisplay = "🥉";
 
-      message += `${rankDisplay} *${name}* - *${points} pts* (${goods}|${exacts})\n`;
+      let statusComment = "";
+      if (rank === 1) statusComment = "- 👑 *GOAT incontesté*";
+      else if (rank === 2) statusComment = "- 👀 *Ça chauffe derrière !*";
+      else if (exacts >= 4)
+        statusComment = "- 🔮 *Une précision impressionnante !*";
+      else if (points < 1450)
+        statusComment = "- 📉 *Réveille-toi, c'est pas encore fini !*";
+
+      message += `${rankDisplay} *${name}* : *${points} pts* (${goods}|${exacts}) ${statusComment}\n`;
     });
+
+    message += "\n⚽ _Bonne chance pour les prochains pronos !_";
 
     return message;
   } catch (error) {
