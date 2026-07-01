@@ -15,7 +15,8 @@ async function getMppRankings() {
     const myUrl = new URL(baseUrl);
     myUrl.searchParams.append("challengeId", challengeId);
     myUrl.searchParams.append("offset", 0);
-    myUrl.searchParams.append("limit", 3);
+    // 1. Increased limit to 20 to ensure we catch all 13 players in the response
+    myUrl.searchParams.append("limit", 20);
 
     console.log("✈️ Sending request to:", myUrl.toString());
 
@@ -29,6 +30,8 @@ async function getMppRankings() {
     });
 
     const standings = response.data.standings || [];
+    const totalPlayers = standings.length;
+
     const today = new Date();
     const day = String(today.getDate()).padStart(2, "0");
     const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -36,7 +39,16 @@ async function getMppRankings() {
     let message = `🏆 *MPP - Le débrief du matin (${day}/${month})* 🏆\n\n`;
     message += "On fait les comptes. Voici l'état du classement ce matin :\n\n";
 
-    standings.forEach((item) => {
+    standings.forEach((item, index) => {
+      // 2. Filter: Only process if it's the top 3 (index 0, 1, 2) OR the last player
+      const isTopThree = index < 3;
+      const isLastPlayer = index === totalPlayers - 1 && totalPlayers > 3;
+
+      if (!isTopThree && !isLastPlayer) {
+        // If it's a middle player, skip them!
+        return;
+      }
+
       const user = item.user || {};
       const ranking = item.ranking || {};
 
@@ -46,18 +58,30 @@ async function getMppRankings() {
       const exacts = ranking.exactForecasts || 0;
       const goods = ranking.goodForecasts || 0;
 
-      let rankDisplay = `*#${rank}*`;
+      let rankDisplay = "🚨";
       if (rank === 1) rankDisplay = "🥇";
       else if (rank === 2) rankDisplay = "🥈";
       else if (rank === 3) rankDisplay = "🥉";
 
       let statusComment = "";
-      if (rank === 1) statusComment = "- 👑 *GOAT incontesté*";
-      else if (rank === 2) statusComment = "- 👀 *Ça chauffe derrière !*";
-      else if (exacts >= 4)
+
+      // 3. Apply the alarm emoji to the last player
+      if (isLastPlayer) {
+        statusComment = "🚨 *Lanterne rouge, alerte générale !*";
+      } else if (rank === 1) {
+        statusComment = "- 👑 *GOAT incontesté*";
+      } else if (rank === 2) {
+        statusComment = "- 👀 *Ça chauffe derrière !*";
+      } else if (exacts >= 4) {
         statusComment = "- 🔮 *Une précision impressionnante !*";
-      else if (points < 1450)
+      } else if (points < 1450) {
         statusComment = "- 📉 *Réveille-toi, c'est pas encore fini !*";
+      }
+
+      // Optional: Add a visual separator line before printing the last player
+      if (isLastPlayer) {
+        message += "\n";
+      }
 
       message += `${rankDisplay} *${name}* : *${points} pts* (${goods}|${exacts}) ${statusComment}\n`;
     });
